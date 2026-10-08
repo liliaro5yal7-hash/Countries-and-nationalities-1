@@ -1,388 +1,594 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Airplane Window Views – Interactive Cabin</title>
-  <style>
-    /* ===== RESET & BASE ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airplane Window Views – PC &amp; Mobile Preview</title>
+<style>
+  /* ========== RESET & BASE ========== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #0b0b14;
-      font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-      overflow-x: hidden;
-    }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #14141f 0%, #0b0b14 60%);
+    color: #ccc;
+    font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 60px;
+    overflow-x: hidden;
+  }
 
-    /* ===== CABIN BACKGROUND ===== */
-    .cabin {
-      position: relative;
-      width: 1100px;
-      max-width: 98vw;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
-      /* Simulated cabin interior: overhead bins, ceiling, sidewall */
-      background:
-        /* Overhead bin panels */
-        linear-gradient(180deg,
-          #2a2a3a 0%,
-          #1e1e2e 8%,
-          #1a1a28 12%,
-          #151520 18%,
-          #12121c 100%
-        );
-      padding: 30px 20px 40px;
-    }
+  /* ========== TOOLBAR ========== */
+  .toolbar {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    background: rgba(28, 28, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 50px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
 
-    /* Ceiling light strip */
-    .cabin::before {
-      content: '';
-      position: absolute;
-      top: 6px;
-      left: 10%;
-      width: 80%;
-      height: 4px;
-      background: linear-gradient(90deg, transparent, #f0e6b0, #fff8e0, #f0e6b0, transparent);
-      border-radius: 2px;
-      opacity: 0.6;
-      filter: blur(1px);
-    }
+  .toggle-group {
+    display: flex;
+    background: #0c0c16;
+    border-radius: 40px;
+    padding: 4px;
+    gap: 3px;
+  }
 
-    /* Overhead bin handle rows (subtle) */
-    .cabin::after {
-      content: '';
-      position: absolute;
-      top: 20px;
-      left: 8%;
-      width: 84%;
-      height: 30px;
-      background:
-        repeating-linear-gradient(90deg,
-          transparent 0px,
-          transparent 40px,
-          rgba(255, 255, 255, 0.04) 40px,
-          rgba(255, 255, 255, 0.04) 42px
-        );
-      border-radius: 4px;
-      pointer-events: none;
-    }
+  .toggle-group button {
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: #888;
+    border-radius: 40px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+  }
 
-    /* ===== WINDOW GRID ===== */
-    .window-row {
-      display: flex;
-      justify-content: center;
-      gap: 22px;
-      flex-wrap: wrap;
-      margin-bottom: 22px;
-    }
+  .toggle-group button.active {
+    background: linear-gradient(135deg, #f0e6b0, #d4c870);
+    color: #1a1a28;
+    box-shadow: 0 3px 12px rgba(240, 230, 176, 0.35);
+  }
 
-    /* ===== SINGLE WINDOW ===== */
-    .window {
-      position: relative;
-      width: 150px;
-      height: 200px;
-      cursor: pointer;
-      border-radius: 60px 60px 50px 50px; /* airplane window shape */
-      overflow: hidden;
-      box-shadow:
-        0 0 0 4px #2a2a3a,       /* inner frame dark */
-        0 0 0 8px #3a3a4a,       /* mid frame */
-        0 0 0 12px #4a4a5a,      /* outer frame */
-        0 0 0 14px #1a1a28,      /* edge shadow */
-        0 8px 30px rgba(0, 0, 0, 0.8);
-      transition: box-shadow 0.3s ease, transform 0.25s ease;
-      flex-shrink: 0;
-    }
+  .toggle-group button:not(.active):hover {
+    color: #ddd;
+    background: rgba(255, 255, 255, 0.05);
+  }
 
-    .window:hover {
-      box-shadow:
-        0 0 0 4px #2a2a3a,
-        0 0 0 8px #3a3a4a,
-        0 0 0 12px #5a5a6a,
-        0 0 0 14px #1a1a28,
-        0 12px 40px rgba(255, 215, 0, 0.25);
-      transform: scale(1.03);
-    }
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 
-    /* ---- The view behind the window (photo) ---- */
-    .view {
-      position: absolute;
-      inset: 0;
-      border-radius: 60px 60px 50px 50px;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      transition: filter 0.5s ease;
-      filter: brightness(0.95);
-    }
+  .zoom-controls button {
+    height: 36px;
+    min-width: 36px;
+    padding: 0 12px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #ddd;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    line-height: 1;
+  }
 
-    /* ---- The shade (closed state) ---- */
-    .shade {
-      position: absolute;
-      inset: -2px; /* cover slightly beyond to hide edges */
-      border-radius: 60px 60px 50px 50px;
-      background:
-        /* Plastic shade texture */
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255, 255, 255, 0.04) 0px,
-          rgba(255, 255, 255, 0.04) 2px,
-          transparent 2px,
-          transparent 6px
-        ),
-        linear-gradient(180deg,
-          #d4d4d4 0%,
-          #c8c8c8 20%,
-          #b8b8b8 50%,
-          #c0c0c0 80%,
-          #a8a8a8 100%
-        );
-      border: 1px solid #999;
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
-      transition: transform 0.9s cubic-bezier(0.23, 1, 0.32, 1);
-      transform-origin: top center;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 10px;
-    }
+  .zoom-controls button:hover {
+    background: rgba(240, 230, 176, 0.14);
+    border-color: rgba(240, 230, 176, 0.45);
+    color: #f0e6b0;
+  }
 
-    /* Shade pull handle */
-    .shade::after {
-      content: '';
-      position: absolute;
-      bottom: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px;
-      height: 5px;
-      background: #888;
-      border-radius: 3px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-    }
+  .zoom-controls button:active { transform: scale(0.94); }
 
-    /* "Click to open" hint on the shade */
-    .shade-hint {
-      position: absolute;
-      bottom: 22px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.55rem;
-      color: #666;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0.7;
-    }
+  #zoomReset { font-size: 0.72rem; }
 
-    /* When window is OPEN, shade slides up and hides */
-    .window.open .shade {
-      transform: translateY(-110%);
-    }
+  #zoomLevel {
+    min-width: 52px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: #f0e6b0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+    user-select: none;
+  }
 
-    .window.open .view {
-      filter: brightness(1);
-    }
+  /* ========== STAGE (responsive container) ========== */
+  .stage {
+    container-type: inline-size;
+    container-name: stage;
+    width: 100%;
+    max-width: 1200px;
+    position: relative;
+    transition: max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-    /* ===== STATUS & CONTROLS ===== */
-    .info {
-      margin-top: 28px;
-      color: #ccc;
-      text-align: center;
-      max-width: 800px;
-      padding: 0 16px;
-    }
+  .stage.mobile { max-width: 400px; }
 
-    .info h1 {
-      font-size: 1.5rem;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-      margin-bottom: 6px;
-      color: #f0e6b0;
-      text-transform: uppercase;
-    }
+  /* Phone notch when in mobile mode */
+  .stage.mobile::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 22px;
+    background: #0a0a10;
+    border-radius: 20px;
+    z-index: 30;
+    pointer-events: none;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.6);
+  }
 
-    .info p {
-      font-size: 0.9rem;
-      opacity: 0.7;
-      margin-bottom: 18px;
-    }
+  /* ========== VIEWPORT (where the content lives) ========== */
+  .viewport {
+    position: relative;
+    width: 100%;
+    height: clamp(380px, 62vh, 720px);
+    background: #05050a;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: default;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.9);
+    touch-action: none;
+    transition: height 0.4s ease, border-radius 0.4s ease,
+                border 0.4s ease, box-shadow 0.4s ease;
+  }
 
-    .controls {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+  .stage.mobile .viewport {
+    height: clamp(520px, 74vh, 780px);
+    border-radius: 34px;
+    border: 10px solid #15151f;
+    box-shadow:
+      0 0 0 2px #2a2a3a,
+      0 0 0 3px #0a0a10,
+      0 24px 70px rgba(0, 0, 0, 0.85),
+      inset 0 0 40px rgba(0, 0, 0, 0.9);
+  }
 
-    .btn {
-      padding: 11px 30px;
-      border: none;
-      border-radius: 60px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-    }
+  .viewport.draggable { cursor: grab; }
+  .viewport.grabbing { cursor: grabbing; }
 
-    .btn:active {
-      transform: scale(0.95);
-    }
+  /* Zoom layer – the thing we scale */
+  .zoom-layer {
+    position: absolute;
+    inset: 0;
+    transform-origin: center center;
+    transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.35, 1);
+    will-change: transform;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    .btn-open {
-      background: linear-gradient(135deg, #f0e6b0, #d4c870);
-      color: #1a1a28;
-      box-shadow: 0 4px 18px rgba(240, 230, 176, 0.35);
-    }
+  .zoom-layer.no-anim { transition: none; }
 
-    .btn-open:hover {
-      box-shadow: 0 6px 28px rgba(240, 230, 176, 0.6);
-      transform: translateY(-2px);
-    }
+  /* ========== CABIN ========== */
+  .cabin {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background:
+      linear-gradient(180deg,
+        #26263a 0%,
+        #1e1e2e 6%,
+        #1a1a28 12%,
+        #151520 22%,
+        #101018 100%);
+    padding: 34px 24px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 22px;
+    overflow: hidden;
+  }
 
-    .btn-close {
-      background: linear-gradient(135deg, #555, #333);
-      color: #eee;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
-    }
+  /* Ceiling light strip */
+  .cabin::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 12%;
+    width: 76%;
+    height: 4px;
+    background: linear-gradient(90deg,
+      transparent, #f0e6b0, #fff8e0, #f0e6b0, transparent);
+    border-radius: 2px;
+    opacity: 0.55;
+    filter: blur(1.2px);
+  }
 
-    .btn-close:hover {
-      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.8);
-      transform: translateY(-2px);
-      background: linear-gradient(135deg, #666, #444);
-    }
+  /* Overhead bin texture */
+  .cabin::after {
+    content: '';
+    position: absolute;
+    top: 22px;
+    left: 6%;
+    width: 88%;
+    height: 26px;
+    background:
+      repeating-linear-gradient(90deg,
+        transparent 0px, transparent 46px,
+        rgba(255, 255, 255, 0.035) 46px,
+        rgba(255, 255, 255, 0.035) 48px);
+    border-radius: 4px;
+    pointer-events: none;
+  }
 
-    .status {
-      margin-top: 14px;
-      font-size: 0.82rem;
-      color: #888;
-      min-height: 1.2em;
-      letter-spacing: 0.5px;
-    }
+  /* ========== WINDOW ROWS ========== */
+  .window-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+  }
 
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 750px) {
-      .cabin {
-        padding: 20px 10px 30px;
-      }
-      .window {
-        width: 100px;
-        height: 140px;
-        border-radius: 40px 40px 35px 35px;
-      }
-      .view {
-        border-radius: 40px 40px 35px 35px;
-      }
-      .shade {
-        border-radius: 40px 40px 35px 35px;
-      }
-      .window-row {
-        gap: 14px;
-      }
-      .info h1 {
-        font-size: 1.1rem;
-      }
-      .btn {
-        padding: 8px 20px;
-        font-size: 0.78rem;
-      }
-    }
+  /* ========== SINGLE WINDOW ========== */
+  .window {
+    position: relative;
+    width: 148px;
+    height: 194px;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-radius: 62px 62px 48px 48px;
+    overflow: hidden;
+    background: #000;
+    box-shadow:
+      0 0 0 3px #2a2a3a,
+      0 0 0 7px #3a3a4a,
+      0 0 0 11px #4a4a5a,
+      0 0 0 13px #16161f,
+      0 10px 34px rgba(0, 0, 0, 0.85);
+    transition: box-shadow 0.3s ease, transform 0.25s ease;
+    outline: none;
+  }
 
-    @media (max-width: 480px) {
-      .window {
-        width: 75px;
-        height: 105px;
-        border-radius: 30px 30px 25px 25px;
-      }
-      .view, .shade {
-        border-radius: 30px 30px 25px 25px;
-      }
-      .shade-hint {
-        font-size: 0.45rem;
-      }
-    }
-  </style>
+  .window:hover,
+  .window:focus-visible {
+    box-shadow:
+      0 0 0 3px #2a2a3a,
+      0 0 0 7px #3a3a4a,
+      0 0 0 11px #6a6a7a,
+      0 0 0 13px #16161f,
+      0 14px 44px rgba(240, 230, 176, 0.28);
+    transform: scale(1.025);
+    z-index: 5;
+  }
+
+  .window:focus-visible {
+    box-shadow:
+      0 0 0 3px #f0e6b0,
+      0 0 0 7px #3a3a4a,
+      0 0 0 11px #6a6a7a,
+      0 0 0 13px #16161f,
+      0 14px 44px rgba(240, 230, 176, 0.4);
+  }
+
+  .view {
+    position: absolute;
+    inset: 0;
+    border-radius: 62px 62px 48px 48px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: brightness(0.94) saturate(1.05);
+    transition: filter 0.5s ease;
+    transform: scale(1.02);
+  }
+
+  .window.open .view { filter: brightness(1.04) saturate(1.15); }
+
+  /* ---- Shade (closed state) ---- */
+  .shade {
+    position: absolute;
+    inset: -3px;
+    border-radius: 62px 62px 48px 48px;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.045) 0px,
+        rgba(255, 255, 255, 0.045) 2px,
+        transparent 2px,
+        transparent 7px),
+      linear-gradient(180deg,
+        #dcdcdc 0%, #cecece 22%, #bdbdbd 55%,
+        #c6c6c6 82%, #a8a8a8 100%);
+    border: 1px solid #9a9a9a;
+    box-shadow:
+      inset 0 -6px 18px rgba(0, 0, 0, 0.18),
+      inset 0 4px 12px rgba(255, 255, 255, 0.35);
+    transition: transform 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+    transform-origin: top center;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 12px;
+  }
+
+  .shade::after {
+    content: '';
+    position: absolute;
+    bottom: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 5px;
+    background: #8a8a8a;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+
+  .shade-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.5rem;
+    color: #6a6a6a;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    font-weight: 600;
+  }
+
+  .window.open .shade { transform: translateY(-112%); }
+
+  /* ========== INFO & CONTROLS ========== */
+  .info {
+    margin-top: 26px;
+    text-align: center;
+    max-width: 720px;
+    padding: 0 16px;
+  }
+
+  .info h1 {
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    color: #f0e6b0;
+    text-transform: uppercase;
+  }
+
+  .info p {
+    font-size: 0.86rem;
+    opacity: 0.65;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 11px 30px;
+    border: none;
+    border-radius: 60px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: inherit;
+  }
+
+  .btn:active { transform: scale(0.95); }
+
+  .btn-open {
+    background: linear-gradient(135deg, #f0e6b0, #d4c870);
+    color: #1a1a28;
+    box-shadow: 0 4px 18px rgba(240, 230, 176, 0.3);
+  }
+  .btn-open:hover {
+    box-shadow: 0 6px 26px rgba(240, 230, 176, 0.55);
+    transform: translateY(-2px);
+  }
+
+  .btn-close {
+    background: linear-gradient(135deg, #4a4a58, #2a2a35);
+    color: #eaeaea;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  }
+  .btn-close:hover {
+    background: linear-gradient(135deg, #5a5a68, #3a3a45);
+    box-shadow: 0 6px 26px rgba(0, 0, 0, 0.75);
+    transform: translateY(-2px);
+  }
+
+  .status {
+    margin-top: 14px;
+    font-size: 0.8rem;
+    color: #7a7a8a;
+    min-height: 1.2em;
+    letter-spacing: 0.5px;
+  }
+
+  .hint {
+    margin-top: 10px;
+    font-size: 0.7rem;
+    color: #555;
+    letter-spacing: 0.4px;
+  }
+
+  /* ========== CONTAINER QUERIES (responsive inside the stage) ========== */
+  @container stage (max-width: 900px) {
+    .cabin { padding: 26px 18px 34px; gap: 16px; }
+    .window-row { gap: 15px; }
+    .window { width: 118px; height: 156px; border-radius: 50px 50px 38px 38px; }
+    .view, .shade { border-radius: 50px 50px 38px 38px; }
+    .shade-hint { font-size: 0.44rem; bottom: 20px; }
+  }
+
+  @container stage (max-width: 720px) {
+    .cabin { padding: 22px 14px 28px; gap: 13px; }
+    .window-row { gap: 12px; }
+    .window { width: 96px; height: 128px; border-radius: 40px 40px 30px 30px; }
+    .view, .shade { border-radius: 40px 40px 30px 30px; }
+    .shade-hint { font-size: 0.4rem; bottom: 16px; letter-spacing: 0.5px; }
+  }
+
+  @container stage (max-width: 500px) {
+    .cabin { padding: 20px 12px 26px; gap: 11px; }
+    .window-row { gap: 10px; }
+    .window { width: 78px; height: 104px; border-radius: 32px 32px 24px 24px; }
+    .view, .shade { border-radius: 32px 32px 24px 24px; }
+    .shade::after { width: 18px; height: 3px; bottom: 6px; }
+    .shade-hint { display: none; }
+  }
+
+  @container stage (max-width: 400px) {
+    .cabin { padding: 18px 10px 22px; gap: 9px; }
+    .window-row { gap: 8px; }
+    .window { width: 68px; height: 92px; border-radius: 28px 28px 22px 22px; }
+    .view, .shade { border-radius: 28px 28px 22px 22px; }
+  }
+
+  /* ========== PAGE MEDIA QUERIES ========== */
+  @media (max-width: 700px) {
+    body { padding: 12px 10px 40px; }
+    .toolbar { padding: 10px 12px; gap: 10px; border-radius: 24px; }
+    .toggle-group button { padding: 7px 12px; font-size: 0.72rem; }
+    .zoom-controls button { height: 32px; min-width: 32px; padding: 0 10px; font-size: 0.9rem; }
+    #zoomReset { font-size: 0.66rem; }
+    #zoomLevel { min-width: 44px; font-size: 0.75rem; }
+    .info h1 { font-size: 1rem; letter-spacing: 1.2px; }
+    .info p { font-size: 0.78rem; }
+    .btn { padding: 9px 22px; font-size: 0.75rem; }
+  }
+
+  @media (max-width: 420px) {
+    .toggle-group button span.label { display: none; }
+    .toggle-group button span.icon { font-size: 1rem; }
+  }
+</style>
 </head>
 <body>
 
-  <!-- ===== CABIN WITH WINDOWS ===== -->
-  <div class="cabin" id="cabin">
-
-    <!-- Row 1 -->
-    <div class="window-row">
-      <div class="window" data-src="https://i.pinimg.com/736x/11/e7/ff/11e7ffb75f26b9826258ac681e92e7ac.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/15/63/15/156315791e8fd72b985ea944b91c9db1.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/40/b3/db/40b3db75b38b3242e90eb4ba0a281eb0.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/ee/c6/97/eec697c78fe26e676afcc164e614d69c.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
+  <!-- ========== TOOLBAR ========== -->
+  <div class="toolbar">
+    <div class="toggle-group" id="viewToggle" role="tablist" aria-label="View mode">
+      <button data-view="pc" class="active" role="tab" aria-selected="true">
+        <span class="icon">🖥</span> <span class="label">PC View</span>
+      </button>
+      <button data-view="mobile" role="tab" aria-selected="false">
+        <span class="icon">📱</span> <span class="label">Mobile View</span>
+      </button>
     </div>
 
-    <!-- Row 2 -->
-    <div class="window-row">
-      <div class="window" data-src="https://i.pinimg.com/736x/e3/31/2a/e3312a95433c6ccc59c7d499913e70ee.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/3f/69/27/3f69272ff52422c88b63c6ff31c171c7.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/bc/dc/bd/bcdcbdaa8623e002f10eb74d0ecde2c6.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/47/eb/d3/47ebd3b8c36f2de4d39261fb12798f20.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
+    <div class="zoom-controls">
+      <button id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
+      <span id="zoomLevel">100%</span>
+      <button id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="zoomReset" title="Reset zoom">⟲ Reset</button>
     </div>
-
-    <!-- Row 3 -->
-    <div class="window-row">
-      <div class="window" data-src="https://i.pinimg.com/736x/52/b2/0f/52b20f4a46ce9066497a9d368fb5a8d7.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/a9/54/79/a954790e7954d49b25d87e8a5c2d0d02.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-      <div class="window" data-src="https://i.pinimg.com/736x/40/97/0e/40970e28c988088e1682171383050cf2.jpg">
-        <div class="view"></div>
-        <div class="shade"><span class="shade-hint">Click to open</span></div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ===== INFO & CONTROLS ===== -->
+  <!-- ========== STAGE / VIEWPORT ========== -->
+  <div class="stage mode-pc" id="stage">
+    <div class="viewport" id="viewport">
+      <div class="zoom-layer" id="zoomLayer">
+        <div class="cabin" id="cabin">
+
+          <!-- Row 1 -->
+          <div class="window-row">
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/11/e7/ff/11e7ffb75f26b9826258ac681e92e7ac.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/15/63/15/156315791e8fd72b985ea944b91c9db1.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/40/b3/db/40b3db75b38b3242e90eb4ba0a281eb0.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/ee/c6/97/eec697c78fe26e676afcc164e614d69c.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="window-row">
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/e3/31/2a/e3312a95433c6ccc59c7d499913e70ee.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/3f/69/27/3f69272ff52422c88b63c6ff31c171c7.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/bc/dc/bd/bcdcbdaa8623e002f10eb74d0ecde2c6.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/47/eb/d3/47ebd3b8c36f2de4d39261fb12798f20.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="window-row">
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/52/b2/0f/52b20f4a46ce9066497a9d368fb5a8d7.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/a9/54/79/a954790e7954d49b25d87e8a5c2d0d02.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+            <div class="window" tabindex="0" role="button" aria-label="Toggle window"
+                 data-src="https://i.pinimg.com/736x/40/97/0e/40970e28c988088e1682171383050cf2.jpg">
+              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== INFO ========== -->
   <div class="info">
     <h1>✈️ Airplane Window Views</h1>
-    <p>Click any closed shade to slide it up and reveal the view outside.</p>
+    <p>Click any closed shade to slide it up and reveal the view outside.<br>
+       Switch between PC and Mobile layouts, or zoom in to inspect details.</p>
 
     <div class="controls">
       <button class="btn btn-open" id="openAllBtn">Open All</button>
@@ -390,85 +596,260 @@
     </div>
 
     <div class="status" id="status">All shades are closed.</div>
+    <div class="hint">💡 Wheel = zoom &nbsp;•&nbsp; Drag = pan (when zoomed) &nbsp;•&nbsp; Double‑click = reset</div>
   </div>
 
-  <!-- ===== JAVASCRIPT ===== -->
-  <script>
-    (function() {
-      'use strict';
+<script>
+(function () {
+  'use strict';
 
-      // Set the background image for each window view from data-src
-      document.querySelectorAll('.window').forEach(function(win) {
-        var src = win.getAttribute('data-src');
-        var view = win.querySelector('.view');
-        if (src && view) {
-          view.style.backgroundImage = 'url("' + src + '")';
-        }
+  /* ============================================================
+     1. LOAD WINDOW IMAGES
+     ============================================================ */
+  document.querySelectorAll('.window').forEach(function (win) {
+    var src = win.getAttribute('data-src');
+    var view = win.querySelector('.view');
+    if (src && view) view.style.backgroundImage = 'url("' + src + '")';
+  });
+
+  /* ============================================================
+     2. WINDOW TOGGLE BEHAVIOUR
+     ============================================================ */
+  var windows    = document.querySelectorAll('.window');
+  var openAllBtn = document.getElementById('openAllBtn');
+  var closeAllBtn= document.getElementById('closeAllBtn');
+  var statusEl   = document.getElementById('status');
+
+  function updateStatus() {
+    var open = document.querySelectorAll('.window.open').length;
+    var total = windows.length;
+    if (open === 0)         statusEl.textContent = 'All shades are closed.';
+    else if (open === total) statusEl.textContent = '🎉 All ' + total + ' windows are open!';
+    else                    statusEl.textContent = open + ' of ' + total + ' windows open.';
+  }
+
+  function toggleWindow(win) {
+    win.classList.toggle('open');
+    updateStatus();
+  }
+
+  windows.forEach(function (win) {
+    win.addEventListener('click', function (e) {
+      if (justDragged) return;         // ignore clicks after a pan
+      e.stopPropagation();
+      toggleWindow(win);
+    });
+    win.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleWindow(win);
+      }
+    });
+  });
+
+  openAllBtn.addEventListener('click', function () {
+    windows.forEach(function (w) { w.classList.add('open'); });
+    updateStatus();
+  });
+  closeAllBtn.addEventListener('click', function () {
+    windows.forEach(function (w) { w.classList.remove('open'); });
+    updateStatus();
+  });
+  updateStatus();
+
+  /* ============================================================
+     3. PC / MOBILE VIEW TOGGLE
+     ============================================================ */
+  var stage       = document.getElementById('stage');
+  var viewToggle  = document.getElementById('viewToggle');
+  var toggleBtns  = viewToggle.querySelectorAll('button');
+
+  toggleBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var mode = btn.getAttribute('data-view');
+      toggleBtns.forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
       });
+      stage.classList.toggle('mobile', mode === 'mobile');
+      stage.classList.toggle('mode-pc', mode === 'pc');
+      stage.classList.toggle('mode-mobile', mode === 'mobile');
+      resetZoom(true);   // reset zoom when switching views
+    });
+  });
 
-      // DOM references
-      var windows = document.querySelectorAll('.window');
-      var openAllBtn = document.getElementById('openAllBtn');
-      var closeAllBtn = document.getElementById('closeAllBtn');
-      var statusEl = document.getElementById('status');
+  /* ============================================================
+     4. ZOOM & PAN
+     ============================================================ */
+  var viewport  = document.getElementById('viewport');
+  var zoomLayer = document.getElementById('zoomLayer');
+  var zoomLabel = document.getElementById('zoomLevel');
 
-      // Update the status text
-      function updateStatus() {
-        var openCount = document.querySelectorAll('.window.open').length;
-        var total = windows.length;
-        if (openCount === 0) {
-          statusEl.textContent = 'All shades are closed.';
-        } else if (openCount === total) {
-          statusEl.textContent = '🎉 All ' + total + ' windows are open!';
-        } else {
-          statusEl.textContent = openCount + ' of ' + total + ' windows open.';
-        }
+  var MIN_ZOOM = 0.5;
+  var MAX_ZOOM = 4;
+
+  var scale = 1;
+  var panX  = 0;
+  var panY  = 0;
+
+  function applyTransform(animate) {
+    if (animate === false) zoomLayer.classList.add('no-anim');
+    else                   zoomLayer.classList.remove('no-anim');
+
+    zoomLayer.style.transform =
+      'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
+
+    viewport.classList.toggle('draggable', scale > 1);
+  }
+
+  function updateLabel() {
+    zoomLabel.textContent = Math.round(scale * 100) + '%';
+  }
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  function setZoom(newScale, opts) {
+    opts = opts || {};
+    newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
+
+    if (opts.zoomToX !== undefined && opts.zoomToY !== undefined) {
+      // zoom toward a point in viewport coordinates (relative to center)
+      var cx = opts.zoomToX;
+      var cy = opts.zoomToY;
+      var px = (cx - panX) / scale;
+      var py = (cy - panY) / scale;
+      panX = cx - px * newScale;
+      panY = cy - py * newScale;
+    }
+
+    scale = newScale;
+    applyTransform(true);
+    updateLabel();
+
+    // bounce back if dragging isn't needed at scale 1
+    if (scale === 1) { panX = 0; panY = 0; applyTransform(true); }
+  }
+
+  function resetZoom(silent) {
+    scale = 1;
+    panX = 0;
+    panY = 0;
+    applyTransform(!silent);
+    updateLabel();
+  }
+
+  /* --- Buttons --- */
+  document.getElementById('zoomIn').addEventListener('click', function () {
+    setZoom(scale * 1.25);
+  });
+  document.getElementById('zoomOut').addEventListener('click', function () {
+    setZoom(scale / 1.25);
+  });
+  document.getElementById('zoomReset').addEventListener('click', function () {
+    resetZoom(false);
+  });
+
+  /* --- Mouse wheel zoom (toward cursor) --- */
+  viewport.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var rect = viewport.getBoundingClientRect();
+    var cx = e.clientX - rect.left - rect.width / 2;
+    var cy = e.clientY - rect.top - rect.height / 2;
+
+    var step = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    setZoom(scale * step, { zoomToX: cx, zoomToY: cy });
+  }, { passive: false });
+
+  /* --- Double-click to reset --- */
+  viewport.addEventListener('dblclick', function () { resetZoom(false); });
+
+  /* --- Pointer-based drag & pinch --- */
+  var pointers    = new Map();
+  var isPinching  = false;
+  var pinchStartDist  = 0;
+  var pinchStartScale = 1;
+  var dragStart   = null;
+  var panStart    = { x: 0, y: 0 };
+  var justDragged = false;
+
+  function dist(a, b) {
+    return Math.hypot(b.x - a.x, b.y - a.y);
+  }
+
+  viewport.addEventListener('pointerdown', function (e) {
+    // ignore clicks on window elements when not zoomed (let them handle)
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size === 2) {
+      isPinching = true;
+      var pts = Array.from(pointers.values());
+      pinchStartDist  = dist(pts[0], pts[1]);
+      pinchStartScale = scale;
+    } else if (pointers.size === 1) {
+      dragStart   = { x: e.clientX, y: e.clientY };
+      panStart    = { x: panX, y: panY };
+      justDragged = false;
+    }
+  });
+
+  viewport.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (isPinching && pointers.size >= 2) {
+      var pts = Array.from(pointers.values());
+      var d = dist(pts[0], pts[1]);
+      var newScale = clamp(pinchStartScale * (d / pinchStartDist), MIN_ZOOM, MAX_ZOOM);
+      setZoom(newScale);
+      e.preventDefault();
+      return;
+    }
+
+    if (dragStart && scale > 1) {
+      var dx = e.clientX - dragStart.x;
+      var dy = e.clientY - dragStart.y;
+
+      if (!justDragged && Math.hypot(dx, dy) > 5) {
+        justDragged = true;
+        viewport.classList.add('grabbing');
+        try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
       }
 
-      // Toggle a single window
-      function toggleWindow(win) {
-        win.classList.toggle('open');
-        updateStatus();
+      if (justDragged) {
+        panX = panStart.x + dx;
+        panY = panStart.y + dy;
+        applyTransform(false);
+        e.preventDefault();
       }
+    }
+  });
 
-      // Click listener per window
-      windows.forEach(function(win) {
-        win.addEventListener('click', function(e) {
-          e.stopPropagation();
-          toggleWindow(win);
-        });
-      });
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) isPinching = false;
+    if (pointers.size === 0) {
+      dragStart = null;
+      viewport.classList.remove('grabbing');
+      // keep justDragged true so the click event is suppressed
+      setTimeout(function () { justDragged = false; }, 60);
+    }
+  }
 
-      // Open all
-      openAllBtn.addEventListener('click', function() {
-        windows.forEach(function(win) { win.classList.add('open'); });
-        updateStatus();
-      });
+  viewport.addEventListener('pointerup', endPointer);
+  viewport.addEventListener('pointercancel', endPointer);
+  viewport.addEventListener('pointerleave', function (e) {
+    if (pointers.has(e.pointerId)) endPointer(e);
+  });
 
-      // Close all
-      closeAllBtn.addEventListener('click', function() {
-        windows.forEach(function(win) { win.classList.remove('open'); });
-        updateStatus();
-      });
+  /* --- Initial state --- */
+  resetZoom(true);
 
-      // Initial status
-      updateStatus();
+  /* --- Recalculate on window resize (keep pan bounded-ish) --- */
+  window.addEventListener('resize', function () {
+    if (scale === 1) { panX = 0; panY = 0; applyTransform(false); }
+  });
 
-      // Keyboard accessibility
-      windows.forEach(function(win) {
-        win.setAttribute('tabindex', '0');
-        win.setAttribute('role', 'button');
-        win.setAttribute('aria-label', 'Toggle window shade');
-        win.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleWindow(win);
-          }
-        });
-      });
-
-    })();
-  </script>
-
+})();
+</script>
 </body>
 </html>
