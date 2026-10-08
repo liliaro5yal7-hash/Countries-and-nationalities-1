@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Airplane Window Views – PC &amp; Mobile Preview</title>
+<title>Airplane Window Views – Full Picture &amp; Per‑Window Zoom</title>
 <style>
   /* ========== RESET & BASE ========== */
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,6 +59,7 @@
     letter-spacing: 0.4px;
     transition: all 0.25s ease;
     white-space: nowrap;
+    font-family: inherit;
   }
 
   .toggle-group button.active {
@@ -94,6 +95,7 @@
     justify-content: center;
     transition: all 0.2s;
     line-height: 1;
+    font-family: inherit;
   }
 
   .zoom-controls button:hover {
@@ -116,7 +118,7 @@
     user-select: none;
   }
 
-  /* ========== STAGE (responsive container) ========== */
+  /* ========== STAGE ========== */
   .stage {
     container-type: inline-size;
     container-name: stage;
@@ -128,7 +130,6 @@
 
   .stage.mobile { max-width: 400px; }
 
-  /* Phone notch when in mobile mode */
   .stage.mobile::before {
     content: '';
     position: absolute;
@@ -144,15 +145,14 @@
     box-shadow: inset 0 -2px 4px rgba(0,0,0,0.6);
   }
 
-  /* ========== VIEWPORT (where the content lives) ========== */
+  /* ========== VIEWPORT ========== */
   .viewport {
     position: relative;
     width: 100%;
-    height: clamp(380px, 62vh, 720px);
+    height: clamp(400px, 64vh, 760px);
     background: #05050a;
     border-radius: 20px;
     overflow: hidden;
-    cursor: default;
     border: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.9);
     touch-action: none;
@@ -161,7 +161,7 @@
   }
 
   .stage.mobile .viewport {
-    height: clamp(520px, 74vh, 780px);
+    height: clamp(540px, 76vh, 800px);
     border-radius: 34px;
     border: 10px solid #15151f;
     box-shadow:
@@ -172,9 +172,8 @@
   }
 
   .viewport.draggable { cursor: grab; }
-  .viewport.grabbing { cursor: grabbing; }
+  .viewport.grabbing  { cursor: grabbing; }
 
-  /* Zoom layer – the thing we scale */
   .zoom-layer {
     position: absolute;
     inset: 0;
@@ -195,11 +194,8 @@
     position: relative;
     background:
       linear-gradient(180deg,
-        #26263a 0%,
-        #1e1e2e 6%,
-        #1a1a28 12%,
-        #151520 22%,
-        #101018 100%);
+        #26263a 0%, #1e1e2e 6%, #1a1a28 12%,
+        #151520 22%, #101018 100%);
     padding: 34px 24px 44px;
     display: flex;
     flex-direction: column;
@@ -208,7 +204,6 @@
     overflow: hidden;
   }
 
-  /* Ceiling light strip */
   .cabin::before {
     content: '';
     position: absolute;
@@ -223,7 +218,6 @@
     filter: blur(1.2px);
   }
 
-  /* Overhead bin texture */
   .cabin::after {
     content: '';
     position: absolute;
@@ -292,21 +286,35 @@
       0 14px 44px rgba(240, 230, 176, 0.4);
   }
 
+  /* ---- FULL PICTURE VIEW (contain = nothing cropped) ---- */
   .view {
     position: absolute;
     inset: 0;
     border-radius: 62px 62px 48px 48px;
-    background-size: cover;
+    background-color: #06060c;
+    background-size: contain;      /* ← whole picture visible */
     background-position: center;
     background-repeat: no-repeat;
     filter: brightness(0.94) saturate(1.05);
     transition: filter 0.5s ease;
-    transform: scale(1.02);
   }
 
-  .window.open .view { filter: brightness(1.04) saturate(1.15); }
+  .window.open .view { filter: brightness(1.06) saturate(1.15); }
 
-  /* ---- Shade (closed state) ---- */
+  /* Glass reflection on top of the view */
+  .view::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(140deg,
+      rgba(255,255,255,0.10) 0%,
+      rgba(255,255,255,0.02) 28%,
+      transparent 55%);
+    pointer-events: none;
+  }
+
+  /* ---- Shade ---- */
   .shade {
     position: absolute;
     inset: -3px;
@@ -362,11 +370,53 @@
 
   .window.open .shade { transform: translateY(-112%); }
 
-  /* ========== INFO & CONTROLS ========== */
+  /* ---- Per‑window zoom button (appears when open) ---- */
+  .zoom-btn {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.6);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(240, 230, 176, 0.7);
+    background: rgba(10, 10, 22, 0.72);
+    color: #f0e6b0;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease, background 0.2s;
+    z-index: 20;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 0;
+    line-height: 1;
+  }
+
+  .window.open .zoom-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) scale(1);
+    transition-delay: 0.45s;
+  }
+
+  .zoom-btn:hover {
+    background: rgba(240, 230, 176, 0.9);
+    color: #1a1a28;
+    transform: translateX(-50%) scale(1.14);
+  }
+
+  .zoom-btn:active { transform: translateX(-50%) scale(0.94); }
+
+  /* ========== INFO ========== */
   .info {
     margin-top: 26px;
     text-align: center;
-    max-width: 720px;
+    max-width: 760px;
     padding: 0 16px;
   }
 
@@ -383,7 +433,7 @@
     font-size: 0.86rem;
     opacity: 0.65;
     margin-bottom: 18px;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   .controls {
@@ -442,15 +492,202 @@
     font-size: 0.7rem;
     color: #555;
     letter-spacing: 0.4px;
+    line-height: 1.6;
   }
 
-  /* ========== CONTAINER QUERIES (responsive inside the stage) ========== */
+  /* ============================================================
+     LIGHTBOX (full‑picture viewer with per‑image zoom)
+     ============================================================ */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(4, 4, 10, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .lightbox.show { opacity: 1; pointer-events: auto; }
+
+  .lb-stage {
+    position: absolute;
+    inset: 78px 84px 108px;
+    overflow: hidden;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+  }
+
+  .lb-stage.grabbable { cursor: grab; }
+  .lb-stage.grabbing  { cursor: grabbing; }
+
+  .lb-img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;          /* whole picture always visible */
+    transform-origin: center center;
+    transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.35, 1);
+    will-change: transform;
+    user-select: none;
+    -webkit-user-drag: none;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+  }
+
+  .lb-img.no-anim { transition: none; }
+
+  /* Close button */
+  .lb-close {
+    position: absolute;
+    top: 20px;
+    right: 22px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.05);
+    color: #eaeaea;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 5;
+    font-family: inherit;
+    line-height: 1;
+  }
+
+  .lb-close:hover {
+    background: rgba(240, 230, 176, 0.9);
+    color: #1a1a28;
+    border-color: transparent;
+    transform: rotate(90deg);
+  }
+
+  /* Prev / Next */
+  .lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 76px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #ddd;
+    font-size: 1.6rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.22s;
+    z-index: 5;
+    font-family: inherit;
+    line-height: 1;
+    padding-bottom: 4px;
+  }
+
+  .lb-nav:hover {
+    background: rgba(240, 230, 176, 0.18);
+    border-color: rgba(240, 230, 176, 0.5);
+    color: #f0e6b0;
+  }
+
+  .lb-nav:disabled { opacity: 0.22; cursor: not-allowed; }
+  .lb-nav:disabled:hover { background: rgba(255,255,255,0.04); color: #ddd; border-color: rgba(255,255,255,0.1); }
+
+  .lb-prev { left: 20px; }
+  .lb-next { right: 20px; }
+
+  /* Bottom toolbar */
+  .lb-toolbar {
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(24, 24, 36, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.6);
+    z-index: 5;
+  }
+
+  .lb-toolbar button {
+    height: 34px;
+    min-width: 34px;
+    padding: 0 12px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #ddd;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-family: inherit;
+    line-height: 1;
+  }
+
+  .lb-toolbar button:hover {
+    background: rgba(240, 230, 176, 0.16);
+    border-color: rgba(240, 230, 176, 0.5);
+    color: #f0e6b0;
+  }
+
+  .lb-toolbar button:active { transform: scale(0.94); }
+
+  #lbReset { font-size: 0.68rem; letter-spacing: 0.5px; }
+
+  #lbZoomLevel {
+    min-width: 50px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #f0e6b0;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+
+  /* Caption */
+  .lb-caption {
+    position: absolute;
+    top: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.78rem;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: #8a8a9a;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .lb-caption strong { color: #f0e6b0; font-weight: 600; }
+
+  /* ========== CONTAINER QUERIES ========== */
   @container stage (max-width: 900px) {
     .cabin { padding: 26px 18px 34px; gap: 16px; }
     .window-row { gap: 15px; }
     .window { width: 118px; height: 156px; border-radius: 50px 50px 38px 38px; }
     .view, .shade { border-radius: 50px 50px 38px 38px; }
     .shade-hint { font-size: 0.44rem; bottom: 20px; }
+    .zoom-btn { width: 26px; height: 26px; font-size: 0.75rem; top: 16px; }
   }
 
   @container stage (max-width: 720px) {
@@ -459,6 +696,7 @@
     .window { width: 96px; height: 128px; border-radius: 40px 40px 30px 30px; }
     .view, .shade { border-radius: 40px 40px 30px 30px; }
     .shade-hint { font-size: 0.4rem; bottom: 16px; letter-spacing: 0.5px; }
+    .zoom-btn { width: 22px; height: 22px; font-size: 0.62rem; top: 12px; border-width: 1px; }
   }
 
   @container stage (max-width: 500px) {
@@ -468,6 +706,7 @@
     .view, .shade { border-radius: 32px 32px 24px 24px; }
     .shade::after { width: 18px; height: 3px; bottom: 6px; }
     .shade-hint { display: none; }
+    .zoom-btn { width: 20px; height: 20px; font-size: 0.55rem; top: 9px; }
   }
 
   @container stage (max-width: 400px) {
@@ -478,6 +717,15 @@
   }
 
   /* ========== PAGE MEDIA QUERIES ========== */
+  @media (max-width: 760px) {
+    .lb-stage { inset: 70px 14px 104px; }
+    .lb-nav { width: 38px; height: 62px; font-size: 1.3rem; }
+    .lb-prev { left: 6px; }
+    .lb-next { right: 6px; }
+    .lb-close { top: 14px; right: 14px; width: 38px; height: 38px; }
+    .lb-caption { top: 20px; font-size: 0.68rem; }
+  }
+
   @media (max-width: 700px) {
     body { padding: 12px 10px 40px; }
     .toolbar { padding: 10px 12px; gap: 10px; border-radius: 24px; }
@@ -491,14 +739,17 @@
   }
 
   @media (max-width: 420px) {
-    .toggle-group button span.label { display: none; }
-    .toggle-group button span.icon { font-size: 1rem; }
+    .toggle-group button .label { display: none; }
+    .toggle-group button .icon { font-size: 1rem; }
+    .lb-toolbar { bottom: 14px; padding: 6px 10px; gap: 5px; }
+    .lb-toolbar button { height: 30px; min-width: 30px; padding: 0 9px; font-size: 0.85rem; }
+    #lbReset { font-size: 0.6rem; }
   }
 </style>
 </head>
 <body>
 
-  <!-- ========== TOOLBAR ========== -->
+  <!-- ================= TOOLBAR ================= -->
   <div class="toolbar">
     <div class="toggle-group" id="viewToggle" role="tablist" aria-label="View mode">
       <button data-view="pc" class="active" role="tab" aria-selected="true">
@@ -517,7 +768,7 @@
     </div>
   </div>
 
-  <!-- ========== STAGE / VIEWPORT ========== -->
+  <!-- ================= STAGE ================= -->
   <div class="stage mode-pc" id="stage">
     <div class="viewport" id="viewport">
       <div class="zoom-layer" id="zoomLayer">
@@ -527,19 +778,27 @@
           <div class="window-row">
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/11/e7/ff/11e7ffb75f26b9826258ac681e92e7ac.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/15/63/15/156315791e8fd72b985ea944b91c9db1.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/40/b3/db/40b3db75b38b3242e90eb4ba0a281eb0.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/ee/c6/97/eec697c78fe26e676afcc164e614d69c.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
           </div>
 
@@ -547,19 +806,27 @@
           <div class="window-row">
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/e3/31/2a/e3312a95433c6ccc59c7d499913e70ee.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/3f/69/27/3f69272ff52422c88b63c6ff31c171c7.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/bc/dc/bd/bcdcbdaa8623e002f10eb74d0ecde2c6.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/47/eb/d3/47ebd3b8c36f2de4d39261fb12798f20.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
           </div>
 
@@ -567,15 +834,21 @@
           <div class="window-row">
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/52/b2/0f/52b20f4a46ce9066497a9d368fb5a8d7.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/a9/54/79/a954790e7954d49b25d87e8a5c2d0d02.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
             <div class="window" tabindex="0" role="button" aria-label="Toggle window"
                  data-src="https://i.pinimg.com/736x/40/97/0e/40970e28c988088e1682171383050cf2.jpg">
-              <div class="view"></div><div class="shade"><span class="shade-hint">Click to open</span></div>
+              <div class="view"></div>
+              <button class="zoom-btn" type="button" title="Zoom this picture" aria-label="Zoom picture">🔍</button>
+              <div class="shade"><span class="shade-hint">Click to open</span></div>
             </div>
           </div>
 
@@ -584,11 +857,11 @@
     </div>
   </div>
 
-  <!-- ========== INFO ========== -->
+  <!-- ================= INFO ================= -->
   <div class="info">
     <h1>✈️ Airplane Window Views</h1>
-    <p>Click any closed shade to slide it up and reveal the view outside.<br>
-       Switch between PC and Mobile layouts, or zoom in to inspect details.</p>
+    <p>Click a closed shade to slide it up — the <strong>whole picture</strong> is shown, nothing cropped.<br>
+       Then hit the 🔍 button on any open window to zoom that picture full‑screen.</p>
 
     <div class="controls">
       <button class="btn btn-open" id="openAllBtn">Open All</button>
@@ -596,7 +869,29 @@
     </div>
 
     <div class="status" id="status">All shades are closed.</div>
-    <div class="hint">💡 Wheel = zoom &nbsp;•&nbsp; Drag = pan (when zoomed) &nbsp;•&nbsp; Double‑click = reset</div>
+    <div class="hint">
+      💡 Wheel = zoom &nbsp;•&nbsp; Drag = pan &nbsp;•&nbsp; Double‑click = reset &nbsp;•&nbsp; Esc = close viewer &nbsp;•&nbsp; ← → = next / previous picture
+    </div>
+  </div>
+
+  <!-- ================= LIGHTBOX ================= -->
+  <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Picture viewer">
+    <div class="lb-caption" id="lbCaption"></div>
+
+    <button class="lb-close" id="lbClose" type="button" title="Close (Esc)" aria-label="Close viewer">✕</button>
+    <button class="lb-nav lb-prev" id="lbPrev" type="button" title="Previous (←)" aria-label="Previous picture">‹</button>
+    <button class="lb-nav lb-next" id="lbNext" type="button" title="Next (→)" aria-label="Next picture">›</button>
+
+    <div class="lb-stage" id="lbStage">
+      <img class="lb-img" id="lbImg" src="" alt="Enlarged window view">
+    </div>
+
+    <div class="lb-toolbar">
+      <button id="lbZoomOut" type="button" title="Zoom out" aria-label="Zoom out">−</button>
+      <span id="lbZoomLevel">100%</span>
+      <button id="lbZoomIn" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="lbReset" type="button" title="Fit to screen">⟲ Fit</button>
+    </div>
   </div>
 
 <script>
@@ -606,26 +901,28 @@
   /* ============================================================
      1. LOAD WINDOW IMAGES
      ============================================================ */
+  var windows = document.querySelectorAll('.window');
+
   document.querySelectorAll('.window').forEach(function (win) {
-    var src = win.getAttribute('data-src');
+    var src  = win.getAttribute('data-src');
     var view = win.querySelector('.view');
     if (src && view) view.style.backgroundImage = 'url("' + src + '")';
   });
 
   /* ============================================================
-     2. WINDOW TOGGLE BEHAVIOUR
+     2. WINDOW OPEN / CLOSE
      ============================================================ */
-  var windows    = document.querySelectorAll('.window');
-  var openAllBtn = document.getElementById('openAllBtn');
-  var closeAllBtn= document.getElementById('closeAllBtn');
-  var statusEl   = document.getElementById('status');
+  var openAllBtn  = document.getElementById('openAllBtn');
+  var closeAllBtn = document.getElementById('closeAllBtn');
+  var statusEl    = document.getElementById('status');
+  var justDragged = false;   // set by the page pan engine
 
   function updateStatus() {
-    var open = document.querySelectorAll('.window.open').length;
+    var open  = document.querySelectorAll('.window.open').length;
     var total = windows.length;
-    if (open === 0)         statusEl.textContent = 'All shades are closed.';
-    else if (open === total) statusEl.textContent = '🎉 All ' + total + ' windows are open!';
-    else                    statusEl.textContent = open + ' of ' + total + ' windows open.';
+    if (open === 0)          statusEl.textContent = 'All shades are closed.';
+    else if (open === total) statusEl.textContent = '🎉 All ' + total + ' windows are open! Click a 🔍 to zoom.';
+    else                     statusEl.textContent = open + ' of ' + total + ' windows open.';
   }
 
   function toggleWindow(win) {
@@ -635,10 +932,12 @@
 
   windows.forEach(function (win) {
     win.addEventListener('click', function (e) {
-      if (justDragged) return;         // ignore clicks after a pan
+      if (justDragged) return;
+      if (e.target.closest('.zoom-btn')) return;   // handled separately
       e.stopPropagation();
       toggleWindow(win);
     });
+
     win.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -651,18 +950,20 @@
     windows.forEach(function (w) { w.classList.add('open'); });
     updateStatus();
   });
+
   closeAllBtn.addEventListener('click', function () {
     windows.forEach(function (w) { w.classList.remove('open'); });
     updateStatus();
   });
+
   updateStatus();
 
   /* ============================================================
      3. PC / MOBILE VIEW TOGGLE
      ============================================================ */
-  var stage       = document.getElementById('stage');
-  var viewToggle  = document.getElementById('viewToggle');
-  var toggleBtns  = viewToggle.querySelectorAll('button');
+  var stage      = document.getElementById('stage');
+  var viewToggle = document.getElementById('viewToggle');
+  var toggleBtns = viewToggle.querySelectorAll('button');
 
   toggleBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -674,12 +975,12 @@
       stage.classList.toggle('mobile', mode === 'mobile');
       stage.classList.toggle('mode-pc', mode === 'pc');
       stage.classList.toggle('mode-mobile', mode === 'mobile');
-      resetZoom(true);   // reset zoom when switching views
+      resetZoom(true);
     });
   });
 
   /* ============================================================
-     4. ZOOM & PAN
+     4. PAGE-LEVEL ZOOM & PAN
      ============================================================ */
   var viewport  = document.getElementById('viewport');
   var zoomLayer = document.getElementById('zoomLayer');
@@ -688,17 +989,14 @@
   var MIN_ZOOM = 0.5;
   var MAX_ZOOM = 4;
 
-  var scale = 1;
-  var panX  = 0;
-  var panY  = 0;
+  var scale = 1, panX = 0, panY = 0;
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
   function applyTransform(animate) {
-    if (animate === false) zoomLayer.classList.add('no-anim');
-    else                   zoomLayer.classList.remove('no-anim');
-
+    zoomLayer.classList.toggle('no-anim', animate === false);
     zoomLayer.style.transform =
       'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
-
     viewport.classList.toggle('draggable', scale > 1);
   }
 
@@ -706,39 +1004,29 @@
     zoomLabel.textContent = Math.round(scale * 100) + '%';
   }
 
-  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
   function setZoom(newScale, opts) {
     opts = opts || {};
     newScale = clamp(newScale, MIN_ZOOM, MAX_ZOOM);
 
-    if (opts.zoomToX !== undefined && opts.zoomToY !== undefined) {
-      // zoom toward a point in viewport coordinates (relative to center)
-      var cx = opts.zoomToX;
-      var cy = opts.zoomToY;
-      var px = (cx - panX) / scale;
-      var py = (cy - panY) / scale;
-      panX = cx - px * newScale;
-      panY = cy - py * newScale;
+    if (opts.zoomToX !== undefined) {
+      var px = (opts.zoomToX - panX) / scale;
+      var py = (opts.zoomToY - panY) / scale;
+      panX = opts.zoomToX - px * newScale;
+      panY = opts.zoomToY - py * newScale;
     }
 
     scale = newScale;
+    if (scale === 1) { panX = 0; panY = 0; }
     applyTransform(true);
     updateLabel();
-
-    // bounce back if dragging isn't needed at scale 1
-    if (scale === 1) { panX = 0; panY = 0; applyTransform(true); }
   }
 
   function resetZoom(silent) {
-    scale = 1;
-    panX = 0;
-    panY = 0;
+    scale = 1; panX = 0; panY = 0;
     applyTransform(!silent);
     updateLabel();
   }
 
-  /* --- Buttons --- */
   document.getElementById('zoomIn').addEventListener('click', function () {
     setZoom(scale * 1.25);
   });
@@ -749,35 +1037,28 @@
     resetZoom(false);
   });
 
-  /* --- Mouse wheel zoom (toward cursor) --- */
   viewport.addEventListener('wheel', function (e) {
     e.preventDefault();
     var rect = viewport.getBoundingClientRect();
-    var cx = e.clientX - rect.left - rect.width / 2;
-    var cy = e.clientY - rect.top - rect.height / 2;
-
-    var step = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    setZoom(scale * step, { zoomToX: cx, zoomToY: cy });
+    setZoom(scale * (e.deltaY < 0 ? 1.12 : 1 / 1.12), {
+      zoomToX: e.clientX - rect.left - rect.width  / 2,
+      zoomToY: e.clientY - rect.top  - rect.height / 2
+    });
   }, { passive: false });
 
-  /* --- Double-click to reset --- */
   viewport.addEventListener('dblclick', function () { resetZoom(false); });
 
-  /* --- Pointer-based drag & pinch --- */
-  var pointers    = new Map();
-  var isPinching  = false;
-  var pinchStartDist  = 0;
-  var pinchStartScale = 1;
-  var dragStart   = null;
-  var panStart    = { x: 0, y: 0 };
-  var justDragged = false;
+  /* --- Pointer drag / pinch for the page --- */
+  var pointers       = new Map();
+  var isPinching     = false;
+  var pinchStartDist = 0;
+  var pinchStartScale= 1;
+  var dragStart      = null;
+  var panStart       = { x: 0, y: 0 };
 
-  function dist(a, b) {
-    return Math.hypot(b.x - a.x, b.y - a.y);
-  }
+  function dist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
 
   viewport.addEventListener('pointerdown', function (e) {
-    // ignore clicks on window elements when not zoomed (let them handle)
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
     if (pointers.size === 2) {
@@ -798,9 +1079,7 @@
 
     if (isPinching && pointers.size >= 2) {
       var pts = Array.from(pointers.values());
-      var d = dist(pts[0], pts[1]);
-      var newScale = clamp(pinchStartScale * (d / pinchStartDist), MIN_ZOOM, MAX_ZOOM);
-      setZoom(newScale);
+      setZoom(pinchStartScale * (dist(pts[0], pts[1]) / pinchStartDist));
       e.preventDefault();
       return;
     }
@@ -830,7 +1109,6 @@
     if (pointers.size === 0) {
       dragStart = null;
       viewport.classList.remove('grabbing');
-      // keep justDragged true so the click event is suppressed
       setTimeout(function () { justDragged = false; }, 60);
     }
   }
@@ -841,12 +1119,216 @@
     if (pointers.has(e.pointerId)) endPointer(e);
   });
 
-  /* --- Initial state --- */
   resetZoom(true);
 
-  /* --- Recalculate on window resize (keep pan bounded-ish) --- */
   window.addEventListener('resize', function () {
     if (scale === 1) { panX = 0; panY = 0; applyTransform(false); }
+  });
+
+  /* ============================================================
+     5. LIGHTBOX  —  per‑window full‑picture viewer with zoom
+     ============================================================ */
+  var lightbox   = document.getElementById('lightbox');
+  var lbStage    = document.getElementById('lbStage');
+  var lbImg      = document.getElementById('lbImg');
+  var lbCaption  = document.getElementById('lbCaption');
+  var lbZoomLbl  = document.getElementById('lbZoomLevel');
+  var lbPrev     = document.getElementById('lbPrev');
+  var lbNext     = document.getElementById('lbNext');
+  var lbClose    = document.getElementById('lbClose');
+
+  var images = Array.prototype.map.call(windows, function (w) {
+    return w.getAttribute('data-src');
+  });
+
+  var LB_MIN = 1;      // 1 = "fit to screen" (whole picture visible)
+  var LB_MAX = 8;
+
+  var lbScale = 1, lbX = 0, lbY = 0;
+  var currentIdx = 0;
+  var lbOpen = false;
+
+  function lbApply(animate) {
+    lbImg.classList.toggle('no-anim', animate === false);
+    lbImg.style.transform =
+      'translate(' + lbX + 'px,' + lbY + 'px) scale(' + lbScale + ')';
+    lbZoomLbl.textContent = Math.round(lbScale * 100) + '%';
+    lbStage.classList.toggle('grabbable', lbScale > 1);
+  }
+
+  function lbSetZoom(ns, px, py) {
+    ns = clamp(ns, LB_MIN, LB_MAX);
+
+    if (px !== undefined && px !== null) {
+      var ix = (px - lbX) / lbScale;
+      var iy = (py - lbY) / lbScale;
+      lbX = px - ix * ns;
+      lbY = py - iy * ns;
+    }
+
+    lbScale = ns;
+    if (lbScale === 1) { lbX = 0; lbY = 0; }
+    lbApply(true);
+  }
+
+  function lbReset() {
+    lbScale = 1; lbX = 0; lbY = 0;
+    lbApply(true);
+  }
+
+  function lbShow(index) {
+    currentIdx = (index + images.length) % images.length;
+    lbImg.src = images[currentIdx];
+    lbCaption.innerHTML =
+      'Picture <strong>' + (currentIdx + 1) + '</strong> / ' + images.length;
+    lbPrev.disabled = images.length < 2;
+    lbNext.disabled = images.length < 2;
+    lbReset();
+  }
+
+  function openLightbox(index) {
+    lbShow(index);
+    lightbox.classList.add('show');
+    lightbox.setAttribute('aria-hidden', 'false');
+    lbOpen = true;
+    document.body.style.overflow = 'hidden';
+    resetZoom(true);          // reset page zoom behind the overlay
+    setTimeout(function () { lbClose.focus(); }, 60);
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('show');
+    lightbox.setAttribute('aria-hidden', 'true');
+    lbOpen = false;
+    document.body.style.overflow = '';
+    setTimeout(function () { lbImg.src = ''; }, 320);
+  }
+
+  /* --- Hook the 🔍 button on every window --- */
+  Array.prototype.forEach.call(windows, function (win, i) {
+    var btn = win.querySelector('.zoom-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      openLightbox(i);
+    });
+  });
+
+  /* --- Toolbar buttons --- */
+  document.getElementById('lbZoomIn').addEventListener('click', function () {
+    lbSetZoom(lbScale * 1.3);
+  });
+  document.getElementById('lbZoomOut').addEventListener('click', function () {
+    lbSetZoom(lbScale / 1.3);
+  });
+  document.getElementById('lbReset').addEventListener('click', function () {
+    lbReset();
+  });
+
+  lbClose.addEventListener('click', closeLightbox);
+  lbPrev.addEventListener('click', function () { lbShow(currentIdx - 1); });
+  lbNext.addEventListener('click', function () { lbShow(currentIdx + 1); });
+
+  /* --- Wheel zoom inside the lightbox (toward cursor) --- */
+  lbStage.addEventListener('wheel', function (e) {
+    if (!lbOpen) return;
+    e.preventDefault();
+    var rect = lbStage.getBoundingClientRect();
+    lbSetZoom(lbScale * (e.deltaY < 0 ? 1.15 : 1 / 1.15),
+      e.clientX - rect.left - rect.width  / 2,
+      e.clientY - rect.top  - rect.height / 2);
+  }, { passive: false });
+
+  /* --- Double-click to fit --- */
+  lbStage.addEventListener('dblclick', function () { lbReset(); });
+
+  /* --- Pointer drag / pinch inside the lightbox --- */
+  var lbPointers   = new Map();
+  var lbPinching   = false;
+  var lbPinchDist  = 0;
+  var lbPinchScale = 1;
+  var lbDragStart  = null;
+  var lbPanStart   = { x: 0, y: 0 };
+  var lbDragged    = false;
+
+  lbStage.addEventListener('pointerdown', function (e) {
+    lbPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (lbPointers.size === 2) {
+      lbPinching = true;
+      var pts = Array.from(lbPointers.values());
+      lbPinchDist  = dist(pts[0], pts[1]);
+      lbPinchScale = lbScale;
+    } else if (lbPointers.size === 1) {
+      lbDragStart = { x: e.clientX, y: e.clientY };
+      lbPanStart  = { x: lbX, y: lbY };
+      lbDragged   = false;
+    }
+  });
+
+  lbStage.addEventListener('pointermove', function (e) {
+    if (!lbPointers.has(e.pointerId)) return;
+    lbPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (lbPinching && lbPointers.size >= 2) {
+      var pts = Array.from(lbPointers.values());
+      lbSetZoom(lbPinchScale * (dist(pts[0], pts[1]) / lbPinchDist));
+      e.preventDefault();
+      return;
+    }
+
+    if (lbDragStart && lbScale > 1) {
+      var dx = e.clientX - lbDragStart.x;
+      var dy = e.clientY - lbDragStart.y;
+
+      if (!lbDragged && Math.hypot(dx, dy) > 4) {
+        lbDragged = true;
+        lbStage.classList.add('grabbing');
+        try { lbStage.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+
+      if (lbDragged) {
+        lbX = lbPanStart.x + dx;
+        lbY = lbPanStart.y + dy;
+        lbApply(false);
+        e.preventDefault();
+      }
+    }
+  });
+
+  function lbEndPointer(e) {
+    lbPointers.delete(e.pointerId);
+    if (lbPointers.size < 2) lbPinching = false;
+    if (lbPointers.size === 0) {
+      lbDragStart = null;
+      lbStage.classList.remove('grabbing');
+      setTimeout(function () { lbDragged = false; }, 60);
+    }
+  }
+
+  lbStage.addEventListener('pointerup', lbEndPointer);
+  lbStage.addEventListener('pointercancel', lbEndPointer);
+  lbStage.addEventListener('pointerleave', function (e) {
+    if (lbPointers.has(e.pointerId)) lbEndPointer(e);
+  });
+
+  /* --- Keyboard shortcuts --- */
+  document.addEventListener('keydown', function (e) {
+    if (!lbOpen) return;
+
+    if (e.key === 'Escape')      { closeLightbox(); }
+    else if (e.key === 'ArrowLeft')  { lbShow(currentIdx - 1); }
+    else if (e.key === 'ArrowRight') { lbShow(currentIdx + 1); }
+    else if (e.key === '+' || e.key === '=') { lbSetZoom(lbScale * 1.3); }
+    else if (e.key === '-' || e.key === '_') { lbSetZoom(lbScale / 1.3); }
+    else if (e.key === '0')      { lbReset(); }
+  });
+
+  /* --- Close by clicking the dark backdrop --- */
+  lbStage.addEventListener('click', function (e) {
+    if (lbDragged) return;
+    if (e.target === lbStage) closeLightbox();
   });
 
 })();
