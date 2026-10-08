@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Windows – Open & Close</title>
+  <title>Airplane Window Views – Interactive Cabin</title>
   <style>
-    /* ----- Global reset & base ----- */
+    /* ===== RESET & BASE ===== */
     * {
       margin: 0;
       padding: 0;
@@ -18,119 +18,204 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      background: #1a1a2e;
+      background: #0b0b14;
       font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+      overflow-x: hidden;
     }
 
-    /* ----- Main container (the building facade) ----- */
-    .scene {
+    /* ===== CABIN BACKGROUND ===== */
+    .cabin {
       position: relative;
-      width: 900px;
-      height: 600px;
-      max-width: 95vw;
-      max-height: 70vh;
-      border-radius: 12px;
+      width: 1100px;
+      max-width: 98vw;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
-      background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&h=600&fit=crop');
-      background-size: cover;
-      background-position: center;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+      /* Simulated cabin interior: overhead bins, ceiling, sidewall */
+      background:
+        /* Overhead bin panels */
+        linear-gradient(180deg,
+          #2a2a3a 0%,
+          #1e1e2e 8%,
+          #1a1a28 12%,
+          #151520 18%,
+          #12121c 100%
+        );
+      padding: 30px 20px 40px;
     }
 
-    /* ----- Each window overlay ----- */
-    .window {
+    /* Ceiling light strip */
+    .cabin::before {
+      content: '';
       position: absolute;
-      cursor: pointer;
+      top: 6px;
+      left: 10%;
+      width: 80%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, #f0e6b0, #fff8e0, #f0e6b0, transparent);
+      border-radius: 2px;
+      opacity: 0.6;
+      filter: blur(1px);
+    }
+
+    /* Overhead bin handle rows (subtle) */
+    .cabin::after {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 8%;
+      width: 84%;
+      height: 30px;
+      background:
+        repeating-linear-gradient(90deg,
+          transparent 0px,
+          transparent 40px,
+          rgba(255, 255, 255, 0.04) 40px,
+          rgba(255, 255, 255, 0.04) 42px
+        );
       border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* ===== WINDOW GRID ===== */
+    .window-row {
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    /* ===== SINGLE WINDOW ===== */
+    .window {
+      position: relative;
+      width: 150px;
+      height: 200px;
+      cursor: pointer;
+      border-radius: 60px 60px 50px 50px; /* airplane window shape */
       overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-      transition: box-shadow 0.3s ease;
+      box-shadow:
+        0 0 0 4px #2a2a3a,       /* inner frame dark */
+        0 0 0 8px #3a3a4a,       /* mid frame */
+        0 0 0 12px #4a4a5a,      /* outer frame */
+        0 0 0 14px #1a1a28,      /* edge shadow */
+        0 8px 30px rgba(0, 0, 0, 0.8);
+      transition: box-shadow 0.3s ease, transform 0.25s ease;
+      flex-shrink: 0;
     }
 
     .window:hover {
-      box-shadow: 0 6px 25px rgba(255, 215, 0, 0.5);
-      z-index: 10;
+      box-shadow:
+        0 0 0 4px #2a2a3a,
+        0 0 0 8px #3a3a4a,
+        0 0 0 12px #5a5a6a,
+        0 0 0 14px #1a1a28,
+        0 12px 40px rgba(255, 215, 0, 0.25);
+      transform: scale(1.03);
     }
 
-    /* The "closed" shutter – a solid panel covering the window */
-    .shutter {
+    /* ---- The view behind the window (photo) ---- */
+    .view {
       position: absolute;
       inset: 0;
-      background: linear-gradient(145deg, #3a3a4a, #1e1e2a);
-      border: 2px solid #555;
-      border-radius: 4px;
-      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 60px 60px 50px 50px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: filter 0.5s ease;
+      filter: brightness(0.95);
+    }
+
+    /* ---- The shade (closed state) ---- */
+    .shade {
+      position: absolute;
+      inset: -2px; /* cover slightly beyond to hide edges */
+      border-radius: 60px 60px 50px 50px;
+      background:
+        /* Plastic shade texture */
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.04) 0px,
+          rgba(255, 255, 255, 0.04) 2px,
+          transparent 2px,
+          transparent 6px
+        ),
+        linear-gradient(180deg,
+          #d4d4d4 0%,
+          #c8c8c8 20%,
+          #b8b8b8 50%,
+          #c0c0c0 80%,
+          #a8a8a8 100%
+        );
+      border: 1px solid #999;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
+      transition: transform 0.9s cubic-bezier(0.23, 1, 0.32, 1);
       transform-origin: top center;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
+      padding-bottom: 10px;
     }
 
-    /* The visual "blinds" texture on the closed shutter */
-    .shutter::before {
-      content: '';
-      position: absolute;
-      inset: 8px;
-      background: repeating-linear-gradient(
-        to bottom,
-        #4a4a5a 0px,
-        #4a4a5a 6px,
-        #2e2e3a 6px,
-        #2e2e3a 12px
-      );
-      border-radius: 2px;
-      opacity: 0.9;
-    }
-
-    /* A small handle/knob on the shutter */
-    .shutter::after {
+    /* Shade pull handle */
+    .shade::after {
       content: '';
       position: absolute;
       bottom: 8px;
       left: 50%;
       transform: translateX(-50%);
-      width: 24px;
-      height: 6px;
-      background: #aaa;
+      width: 30px;
+      height: 5px;
+      background: #888;
       border-radius: 3px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     }
 
-    /* When the window is open, the shutter slides up out of view */
-    .window.open .shutter {
+    /* "Click to open" hint on the shade */
+    .shade-hint {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.55rem;
+      color: #666;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* When window is OPEN, shade slides up and hides */
+    .window.open .shade {
       transform: translateY(-110%);
     }
 
-    /* ----- Window positions & sizes (6 windows) ----- */
-    /* Top row */
-    .window:nth-child(1) { top: 12%; left: 8%;   width: 18%; height: 22%; }
-    .window:nth-child(2) { top: 12%; left: 32%;  width: 18%; height: 22%; }
-    .window:nth-child(3) { top: 12%; left: 56%;  width: 18%; height: 22%; }
-    .window:nth-child(4) { top: 12%; left: 80%;  width: 18%; height: 22%; }
+    .window.open .view {
+      filter: brightness(1);
+    }
 
-    /* Bottom row */
-    .window:nth-child(5) { top: 48%; left: 8%;   width: 18%; height: 22%; }
-    .window:nth-child(6) { top: 48%; left: 32%;  width: 18%; height: 22%; }
-
-    /* ----- Info & controls ----- */
+    /* ===== STATUS & CONTROLS ===== */
     .info {
-      margin-top: 24px;
-      color: #eee;
+      margin-top: 28px;
+      color: #ccc;
       text-align: center;
-      max-width: 700px;
+      max-width: 800px;
+      padding: 0 16px;
     }
 
     .info h1 {
-      font-size: 1.6rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: 1.5px;
       margin-bottom: 6px;
-      color: #f0c040;
+      color: #f0e6b0;
+      text-transform: uppercase;
     }
 
     .info p {
-      font-size: 0.95rem;
-      opacity: 0.8;
+      font-size: 0.9rem;
+      opacity: 0.7;
       margin-bottom: 18px;
     }
 
@@ -142,171 +227,238 @@
     }
 
     .btn {
-      padding: 10px 26px;
+      padding: 11px 30px;
       border: none;
-      border-radius: 50px;
-      font-size: 0.95rem;
+      border-radius: 60px;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
     }
 
     .btn:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
     }
 
     .btn-open {
-      background: linear-gradient(135deg, #f0c040, #e6a817);
-      color: #1a1a2e;
-      box-shadow: 0 4px 15px rgba(240, 192, 64, 0.4);
+      background: linear-gradient(135deg, #f0e6b0, #d4c870);
+      color: #1a1a28;
+      box-shadow: 0 4px 18px rgba(240, 230, 176, 0.35);
     }
 
     .btn-open:hover {
-      box-shadow: 0 6px 25px rgba(240, 192, 64, 0.7);
+      box-shadow: 0 6px 28px rgba(240, 230, 176, 0.6);
       transform: translateY(-2px);
     }
 
     .btn-close {
       background: linear-gradient(135deg, #555, #333);
       color: #eee;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
     }
 
     .btn-close:hover {
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.8);
       transform: translateY(-2px);
       background: linear-gradient(135deg, #666, #444);
     }
 
-    /* Status text */
     .status {
       margin-top: 14px;
-      font-size: 0.85rem;
-      color: #aaa;
+      font-size: 0.82rem;
+      color: #888;
       min-height: 1.2em;
+      letter-spacing: 0.5px;
     }
 
-    /* Responsive tweaks */
-    @media (max-width: 700px) {
-      .scene {
-        height: 400px;
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 750px) {
+      .cabin {
+        padding: 20px 10px 30px;
+      }
+      .window {
+        width: 100px;
+        height: 140px;
+        border-radius: 40px 40px 35px 35px;
+      }
+      .view {
+        border-radius: 40px 40px 35px 35px;
+      }
+      .shade {
+        border-radius: 40px 40px 35px 35px;
+      }
+      .window-row {
+        gap: 14px;
       }
       .info h1 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
       }
       .btn {
-        padding: 8px 18px;
-        font-size: 0.85rem;
+        padding: 8px 20px;
+        font-size: 0.78rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .window {
+        width: 75px;
+        height: 105px;
+        border-radius: 30px 30px 25px 25px;
+      }
+      .view, .shade {
+        border-radius: 30px 30px 25px 25px;
+      }
+      .shade-hint {
+        font-size: 0.45rem;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- === The building facade with 6 interactive windows === -->
-  <div class="scene" id="scene">
-    <!-- Window 1 -->
-    <div class="window" data-id="1">
-      <div class="shutter"></div>
+  <!-- ===== CABIN WITH WINDOWS ===== -->
+  <div class="cabin" id="cabin">
+
+    <!-- Row 1 -->
+    <div class="window-row">
+      <div class="window" data-src="https://i.pinimg.com/736x/11/e7/ff/11e7ffb75f26b9826258ac681e92e7ac.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/15/63/15/156315791e8fd72b985ea944b91c9db1.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/40/b3/db/40b3db75b38b3242e90eb4ba0a281eb0.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/ee/c6/97/eec697c78fe26e676afcc164e614d69c.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
     </div>
-    <!-- Window 2 -->
-    <div class="window" data-id="2">
-      <div class="shutter"></div>
+
+    <!-- Row 2 -->
+    <div class="window-row">
+      <div class="window" data-src="https://i.pinimg.com/736x/e3/31/2a/e3312a95433c6ccc59c7d499913e70ee.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/3f/69/27/3f69272ff52422c88b63c6ff31c171c7.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/bc/dc/bd/bcdcbdaa8623e002f10eb74d0ecde2c6.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/47/eb/d3/47ebd3b8c36f2de4d39261fb12798f20.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
     </div>
-    <!-- Window 3 -->
-    <div class="window" data-id="3">
-      <div class="shutter"></div>
+
+    <!-- Row 3 -->
+    <div class="window-row">
+      <div class="window" data-src="https://i.pinimg.com/736x/52/b2/0f/52b20f4a46ce9066497a9d368fb5a8d7.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/a9/54/79/a954790e7954d49b25d87e8a5c2d0d02.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
+      <div class="window" data-src="https://i.pinimg.com/736x/40/97/0e/40970e28c988088e1682171383050cf2.jpg">
+        <div class="view"></div>
+        <div class="shade"><span class="shade-hint">Click to open</span></div>
+      </div>
     </div>
-    <!-- Window 4 -->
-    <div class="window" data-id="4">
-      <div class="shutter"></div>
-    </div>
-    <!-- Window 5 -->
-    <div class="window" data-id="5">
-      <div class="shutter"></div>
-    </div>
-    <!-- Window 6 -->
-    <div class="window" data-id="6">
-      <div class="shutter"></div>
-    </div>
+
   </div>
 
-  <!-- === Info & Controls === -->
+  <!-- ===== INFO & CONTROLS ===== -->
   <div class="info">
-    <h1>🏢 Interactive Window Facade</h1>
-    <p>Click any closed window to open it and reveal the scene behind.</p>
+    <h1>✈️ Airplane Window Views</h1>
+    <p>Click any closed shade to slide it up and reveal the view outside.</p>
 
     <div class="controls">
-      <button class="btn btn-open" id="openAllBtn">Open All Windows</button>
-      <button class="btn btn-close" id="closeAllBtn">Close All Windows</button>
+      <button class="btn btn-open" id="openAllBtn">Open All</button>
+      <button class="btn btn-close" id="closeAllBtn">Close All</button>
     </div>
 
-    <div class="status" id="status">All windows are currently closed.</div>
+    <div class="status" id="status">All shades are closed.</div>
   </div>
 
-  <!-- === JavaScript for interaction === -->
+  <!-- ===== JAVASCRIPT ===== -->
   <script>
     (function() {
       'use strict';
 
-      // --- DOM references ---
-      const windows = document.querySelectorAll('.window');
-      const openAllBtn = document.getElementById('openAllBtn');
-      const closeAllBtn = document.getElementById('closeAllBtn');
-      const statusEl = document.getElementById('status');
+      // Set the background image for each window view from data-src
+      document.querySelectorAll('.window').forEach(function(win) {
+        var src = win.getAttribute('data-src');
+        var view = win.querySelector('.view');
+        if (src && view) {
+          view.style.backgroundImage = 'url("' + src + '")';
+        }
+      });
 
-      // --- Helper: update status text ---
+      // DOM references
+      var windows = document.querySelectorAll('.window');
+      var openAllBtn = document.getElementById('openAllBtn');
+      var closeAllBtn = document.getElementById('closeAllBtn');
+      var statusEl = document.getElementById('status');
+
+      // Update the status text
       function updateStatus() {
-        const openCount = document.querySelectorAll('.window.open').length;
+        var openCount = document.querySelectorAll('.window.open').length;
+        var total = windows.length;
         if (openCount === 0) {
-          statusEl.textContent = 'All windows are currently closed.';
-        } else if (openCount === windows.length) {
-          statusEl.textContent = '🎉 All windows are open! You can see the full facade.';
+          statusEl.textContent = 'All shades are closed.';
+        } else if (openCount === total) {
+          statusEl.textContent = '🎉 All ' + total + ' windows are open!';
         } else {
-          statusEl.textContent = `${openCount} of ${windows.length} windows open.`;
+          statusEl.textContent = openCount + ' of ' + total + ' windows open.';
         }
       }
 
-      // --- Toggle a single window ---
+      // Toggle a single window
       function toggleWindow(win) {
         win.classList.toggle('open');
         updateStatus();
       }
 
-      // --- Attach click listeners to each window ---
+      // Click listener per window
       windows.forEach(function(win) {
         win.addEventListener('click', function(e) {
-          e.stopPropagation(); // avoid accidental double‑handling
+          e.stopPropagation();
           toggleWindow(win);
         });
       });
 
-      // --- Open all windows ---
+      // Open all
       openAllBtn.addEventListener('click', function() {
-        windows.forEach(function(win) {
-          win.classList.add('open');
-        });
+        windows.forEach(function(win) { win.classList.add('open'); });
         updateStatus();
       });
 
-      // --- Close all windows ---
+      // Close all
       closeAllBtn.addEventListener('click', function() {
-        windows.forEach(function(win) {
-          win.classList.remove('open');
-        });
+        windows.forEach(function(win) { win.classList.remove('open'); });
         updateStatus();
       });
 
-      // --- Initialize status on load ---
+      // Initial status
       updateStatus();
 
-      // --- Optional: keyboard accessibility (Enter/Space on windows) ---
+      // Keyboard accessibility
       windows.forEach(function(win) {
         win.setAttribute('tabindex', '0');
         win.setAttribute('role', 'button');
-        win.setAttribute('aria-label', 'Toggle window');
-
+        win.setAttribute('aria-label', 'Toggle window shade');
         win.addEventListener('keydown', function(e) {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
